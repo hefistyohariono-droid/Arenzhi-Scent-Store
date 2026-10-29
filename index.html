@@ -10,7 +10,7 @@
    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
    <!-- Lucide Icons -->
    <script src="https://unpkg.com/lucide@latest"></script>
-   <!-- Midtrans Snap JS (Sandbox/Production tergantung script, menggunakan Client Key Anda) -->
+   <!-- Midtrans Snap JS (Sandbox) -->
    <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="Mid-client-gMCBc5RdkhpCqJy7"></script>
    <!-- PWA Manifest Data URI -->
    <link rel="manifest" href='data:application/manifest+json,{"name":"Arenzhi Scent","short_name":"Arenzhi","start_url":".","display":"standalone","background_color":"#ffffff","theme_color":"#0f172a","icons":[{"src":"https://api.iconify.design/lucide:sparkles.svg?color=%230f172a","sizes":"192x192","type":"image/svg+xml"}]}'>
@@ -580,12 +580,6 @@
            saveCart();
            updateCartBadge();
 
-           // --- INTEGRASI MIDTRANS SNAP (MEMUNCULKAN POPUP QRIS OTOMATIS & MULTI-PEMBAYARAN) ---
-           // Catatan: Karena berjalan di frontend statis murni tanpa server backend PHP/Node.js, 
-           // kita menggunakan simulasi token Snap atau direct call untuk memunculkan modal pembayaran.
-           // Anda dapat mengonfigurasi Snap token dari backend jika sudah memiliki server, 
-           // atau menggunakan popup pembayaran instan di bawah ini:
-           
            router.navigate('payment', orderId);
        }
 
@@ -593,20 +587,44 @@
            const order = state.orders.find(o => o.order_id === orderId);
            if (!order) return;
 
-           // Parameter Payload Midtrans Snap
-           // Jika Anda menggunakan mode Client Key murni di frontend, pastikan server Midtrans mengizinkan tokenization
-           // Atau gunakan popup pembayaran uji coba Snap berikut:
-           alert("Membuka Jendela Pembayaran Midtrans Snap untuk Order ID: " + orderId + "\nTotal: Rp " + Number(order.gross_amount).toLocaleString('id-ID'));
-           
-           // Contoh pemanggilan Snap jika token sudah digenerate dari server:
-           // snap.pay('YOUR_SNAP_TOKEN', { ... });
+           // Memanggil jendela popup pembayaran Midtrans Snap secara langsung
+           try {
+               window.snap.pay(MIDTRANS_CLIENT_KEY, {
+                   transaction_details: {
+                       order_id: order.order_id,
+                       gross_amount: order.gross_amount
+                   },
+                   customer_details: {
+                       first_name: order.customer_name,
+                       phone: order.customer_phone
+                   },
+                   onSuccess: function(result){
+                       alert("Pembayaran Berhasil!");
+                       console.log(result);
+                       router.navigate('home');
+                   },
+                   onPending: function(result){
+                       alert("Menunggu Pembayaran QRIS/VA Anda.");
+                       console.log(result);
+                   },
+                   onError: function(result){
+                       alert("Pembayaran Gagal!");
+                       console.log(result);
+                   },
+                   onClose: function(){
+                       console.log('Popup ditutup.');
+                   }
+               });
+           } catch (err) {
+               console.error("Midtrans Snap Error:", err);
+               alert("Gagal memuat popup pembayaran Midtrans. Pastikan koneksi stabil.");
+           }
        }
 
        function renderPaymentView(orderId) {
            const order = state.orders.find(o => o.order_id === orderId);
            if (!order) return `<div class="text-center py-20">Data pesanan tidak ditemukan.</div>`;
            const paymentInfo = state.storeSettings.payment_info || "BRI: 786601020880538 a.n. Robiatul Adabiyah";
-           const qrisImage = state.storeSettings.qris_image_url || "";
 
            return `
                <div class="max-w-2xl mx-auto bg-white rounded-3xl border border-slate-200 p-8 shadow-sm space-y-6 text-center">
@@ -631,11 +649,10 @@
                        </button>
                    </div>
 
-                   <!-- OPSI CADANGAN: QRIS STATIS / TRANSFER REKENING -->
+                   <!-- OPSI CADANGAN -->
                    <div class="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-left space-y-2">
                        <h3 class="font-bold text-sm text-slate-900 border-b pb-2">Opsi Cadangan: Transfer Rekening Toko</h3>
                        <p class="text-xs text-slate-700 whitespace-pre-line leading-relaxed font-medium">${paymentInfo}</p>
-                       <p class="text-[11px] text-slate-500 mt-1">Harap konfirmasi ke WhatsApp Admin setelah melakukan pembayaran.</p>
                    </div>
 
                    <button onclick="router.navigate('home')" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold shadow-md">Selesai / Kembali ke Beranda</button>
@@ -643,7 +660,7 @@
            `;
        }
 
-       // --- PANEL ADMIN & FAKTUR PDF / CETAK PROFESIONAL ---
+       // --- PANEL ADMIN & FAKTUR PDF ---
        let editingProductId = null;
 
        function renderAdminView() {
