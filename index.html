@@ -11,7 +11,8 @@
    <!-- Lucide Icons -->
    <script src="https://unpkg.com/lucide@latest"></script>
    <!-- Midtrans Snap JS -->
-   <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="Mid-client-gMCBc5RdkhpCqJy7"></script>
+   <!-- Midtrans Snap JS Live -->
+<script type="text/javascript" src="https://app.midtrans.com/snap/snap.js" data-client-key="Mid-client-KLIEN_KEY_LIVE_ANDA"></script>
    <!-- PWA Manifest Data URI -->
    <link rel="manifest" href='data:application/manifest+json,{"name":"Arenzhi Scent","short_name":"Arenzhi","start_url":".","display":"standalone","background_color":"#ffffff","theme_color":"#0f172a","icons":[{"src":"https://api.iconify.design/lucide:sparkles.svg?color=%230f172a","sizes":"192x192","type":"image/svg+xml"}]}'>
    <style>
@@ -147,7 +148,7 @@
        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
        
        // URL Web App Google Apps Script Anda yang aktif
-       const GAS_BACKEND_URL = "https://script.google.com/macros/s/AKfycbz5ELkrD24QXrCYGsEl9xliWG0m7ZxroI3qN9EB6uOHhqqdMn5CYkDpAzZhAKo-TEGP1w/exec";
+       const GAS_BACKEND_URL = "https://script.google.com/macros/s/AKfycbyFKZXQ_yk509UgwkETFnd3z610-QQH8GbjPoY_7ac538nH_hs-sdpx5Yh-Cmfu6YRNPg/exec";
 
        let state = {
            storeSettings: JSON.parse(localStorage.getItem('arenzhi_settings') || JSON.stringify({
