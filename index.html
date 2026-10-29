@@ -217,6 +217,12 @@
            const name = state.storeSettings.store_name || "Arenzhi Scent";
            document.getElementById('brandTitleText').innerText = name;
            document.getElementById('footerBrandName').innerText = name;
+           const logoContainer = document.getElementById('brandLogoContainer');
+           if (state.storeSettings.store_logo_url) {
+               logoContainer.innerHTML = `<img src="${state.storeSettings.store_logo_url}" class="w-full h-full object-cover" alt="Logo">`;
+           } else {
+               logoContainer.innerHTML = `<span id="brandLogoInitial">${name.charAt(0).toUpperCase()}</span>`;
+           }
            document.title = `${name} - Official Perfume Catalog & Store`;
        }
 
@@ -262,7 +268,7 @@
                        ${filtered.map(p => `
                            <div class="bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-lg transition-all overflow-hidden flex flex-col justify-between group">
                                <div class="relative aspect-square bg-slate-100 overflow-hidden cursor-pointer" onclick="router.navigate('detail', '${p.id}')">
-                                   <img src="${p.image_url}" alt="${p.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                   <img src="${p.image_url || 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?w=600'}" alt="${p.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                                    ${p.is_promo && p.discount_percent > 0 ? `<span class="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">Diskon ${p.discount_percent}%</span>` : ''}
                                </div>
                                <div class="p-3 sm:p-4 space-y-2 flex-1 flex flex-col justify-between">
@@ -270,6 +276,7 @@
                                        <h4 class="font-bold text-slate-900 text-xs sm:text-sm line-clamp-1 cursor-pointer hover:text-amber-600" onclick="router.navigate('detail', '${p.id}')">${p.title}</h4>
                                        <div class="mt-1 flex items-baseline gap-2">
                                            <span class="font-bold text-slate-950 text-sm sm:text-base">Rp ${Number(p.price_final).toLocaleString('id-ID')}</span>
+                                           ${p.is_promo && p.price_original > p.price_final ? `<span class="text-[11px] text-slate-400 line-through">Rp ${Number(p.price_original).toLocaleString('id-ID')}</span>` : ''}
                                        </div>
                                    </div>
                                    <button onclick="addToCart('${p.id}')" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5">
@@ -299,10 +306,12 @@
                            <div>
                                <div class="flex items-center gap-2 mb-2">
                                    ${product.size_ml ? `<span class="bg-slate-100 text-slate-800 text-xs font-bold px-2.5 py-1 rounded-md">Ukuran: ${product.size_ml}</span>` : ''}
+                                   ${product.is_promo && product.discount_percent > 0 ? `<span class="bg-red-100 text-red-600 text-xs font-bold px-3 py-1 rounded-full">Diskon ${product.discount_percent}%</span>` : ''}
                                </div>
                                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900">${product.title}</h2>
                                <div class="mt-3 flex items-baseline gap-3">
                                    <span class="text-2xl font-bold text-slate-900">Rp ${Number(product.price_final).toLocaleString('id-ID')}</span>
+                                   ${product.is_promo && product.price_original > product.price_final ? `<span class="text-sm text-slate-400 line-through">Rp ${Number(product.price_original).toLocaleString('id-ID')}</span>` : ''}
                                </div>
                            </div>
                            <p class="text-slate-600 text-sm leading-relaxed">${product.description || 'Tidak ada deskripsi.'}</p>
@@ -487,7 +496,9 @@
            `;
        }
 
-       // PANEL ADMIN DENGAN PENGATURAN TOKO DAN TAMBAH PRODUK LENGKAP
+       // --- PANEL ADMIN DENGAN FITUR LENGKAP REVISI ---
+       let editingProductId = null;
+
        function renderAdminView() {
            const s = state.storeSettings;
            return `
@@ -495,14 +506,14 @@
                    <div class="flex items-center justify-between">
                        <div>
                            <h2 class="text-2xl font-bold text-slate-900">Panel Admin & Pengaturan Toko</h2>
-                           <p class="text-sm text-slate-500">Kelola profil toko, nomor WA, alamat, rekening, dan tambah produk.</p>
+                           <p class="text-sm text-slate-500">Kelola profil toko, logo, produk dengan promo/upload gambar, dan katalog.</p>
                        </div>
                        <button onclick="router.navigate('home')" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold">Kembali ke Beranda</button>
                    </div>
 
-                   <!-- Form Pengaturan Profil Toko -->
+                   <!-- Form Pengaturan Profil Toko & Upload Logo -->
                    <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-                       <h3 class="font-bold text-lg text-slate-900 border-b pb-2">Informasi Profil Toko</h3>
+                       <h3 class="font-bold text-lg text-slate-900 border-b pb-2">Informasi Profil Toko & Logo</h3>
                        <form onsubmit="saveStoreSettings(event)" class="space-y-4">
                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                <div>
@@ -512,6 +523,16 @@
                                <div>
                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor WhatsApp Admin (Awali 62)</label>
                                    <input type="text" id="adminWa" value="${s.admin_wa_number || ''}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" required>
+                               </div>
+                           </div>
+                           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                               <div>
+                                   <label class="block text-xs font-semibold text-slate-700 mb-1">Upload Logo Toko (Dari Perangkat/Galeri)</label>
+                                   <input type="file" id="adminLogoFile" accept="image/*" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-white hover:file:bg-slate-800">
+                               </div>
+                               <div>
+                                   <label class="block text-xs font-semibold text-slate-700 mb-1">Atau URL Logo Toko</label>
+                                   <input type="url" id="adminLogoUrl" value="${s.store_logo_url || ''}" placeholder="https://..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
                                </div>
                            </div>
                            <div>
@@ -526,10 +547,11 @@
                        </form>
                    </div>
 
-                   <!-- Form Tambah Produk Baru -->
+                   <!-- Form Tambah / Edit Produk Baru dengan Promo & Upload Gambar Perangkat -->
                    <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-                       <h3 class="font-bold text-lg text-slate-900 border-b pb-2">Tambah Produk Parfum Baru</h3>
-                       <form onsubmit="addNewProduct(event)" class="space-y-4">
+                       <h3 id="productFormTitle" class="font-bold text-lg text-slate-900 border-b pb-2">Tambah Produk Parfum Baru</h3>
+                       <form onsubmit="handleProductSubmit(event)" class="space-y-4">
+                           <input type="hidden" id="editProductId">
                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                <div>
                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Produk / Parfum</label>
@@ -540,22 +562,59 @@
                                    <input type="text" id="newProdSize" placeholder="Contoh: 50ml" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" required>
                                </div>
                            </div>
-                           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                <div>
-                                   <label class="block text-xs font-semibold text-slate-700 mb-1">Harga Jual (Rp)</label>
-                                   <input type="number" id="newProdPrice" placeholder="350000" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" required>
+                                   <label class="block text-xs font-semibold text-slate-700 mb-1">Harga Asli / Normal (Rp)</label>
+                                   <input type="number" id="newProdPrice" placeholder="450000" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" required>
                                </div>
                                <div>
-                                   <label class="block text-xs font-semibold text-slate-700 mb-1">URL Gambar Produk</label>
-                                   <input type="url" id="newProdImage" placeholder="https://images.unsplash.com/..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" required>
+                                   <label class="block text-xs font-semibold text-slate-700 mb-1">Diskon Promo (%)</label>
+                                   <input type="number" id="newProdDiscount" value="0" min="0" max="100" placeholder="Contoh: 20" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                               </div>
+                               <div>
+                                   <label class="block text-xs font-semibold text-slate-700 mb-1">Stok Produk</label>
+                                   <input type="number" id="newProdStock" value="20" placeholder="20" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" required>
+                               </div>
+                           </div>
+                           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                               <div>
+                                   <label class="block text-xs font-semibold text-slate-700 mb-1">Upload Gambar dari Perangkat/Galeri</label>
+                                   <input type="file" id="newProdFile" accept="image/*" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700">
+                               </div>
+                               <div>
+                                   <label class="block text-xs font-semibold text-slate-700 mb-1">Atau URL Gambar Produk</label>
+                                   <input type="url" id="newProdImage" placeholder="https://images.unsplash.com/..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
                                </div>
                            </div>
                            <div>
                                <label class="block text-xs font-semibold text-slate-700 mb-1">Deskripsi Aroma</label>
                                <textarea id="newProdDesc" rows="2" placeholder="Deskripsi keharuman parfum..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" required></textarea>
                            </div>
-                           <button type="submit" class="py-2.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-md">Simpan & Tambah Produk</button>
+                           <div class="flex gap-3">
+                               <button type="submit" id="productSubmitBtn" class="py-2.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-md">Simpan & Tambah Produk</button>
+                               <button type="button" id="cancelEditBtn" onclick="resetProductForm()" class="hidden py-2.5 px-6 bg-slate-300 hover:bg-slate-400 text-slate-800 rounded-xl text-xs font-semibold">Batal Edit</button>
+                           </div>
                        </form>
+                   </div>
+
+                   <!-- Katalog Produk di Dalam Panel Admin (Dilengkapi Fitur Edit & Hapus) -->
+                   <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                       <h3 class="font-bold text-lg text-slate-900 border-b pb-2">Katalog Produk Terdaftar (${state.products.length})</h3>
+                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                           ${state.products.map(p => `
+                               <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
+                                   <img src="${p.image_url}" class="w-16 h-16 object-cover rounded-xl bg-slate-200 flex-shrink-0">
+                                   <div class="flex-1 min-w-0">
+                                       <h4 class="font-bold text-sm text-slate-900 truncate">${p.title}</h4>
+                                       <span class="text-xs text-slate-500">Rp ${Number(p.price_final).toLocaleString('id-ID')} ${p.is_promo ? `(Diskon ${p.discount_percent}%)` : ''}</span>
+                                       <div class="flex gap-2 mt-2">
+                                           <button onclick="startEditProduct('${p.id}')" class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-semibold rounded-lg">Edit</button>
+                                           <button onclick="deleteProduct('${p.id}')" class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-[11px] font-semibold rounded-lg">Hapus</button>
+                                       </div>
+                                   </div>
+                               </div>
+                           `).join('')}
+                       </div>
                    </div>
 
                    <!-- Daftar Pesanan Masuk -->
@@ -579,41 +638,124 @@
            `;
        }
 
-       function saveStoreSettings(e) {
+       // Fungsi Helper Konversi File Gambar ke Base64
+       function convertFileToBase64(file) {
+           return new Promise((resolve, reject) => {
+               const reader = new FileReader();
+               reader.readAsDataURL(file);
+               reader.onload = () => resolve(reader.result);
+               reader.onerror = error => reject(error);
+           });
+       }
+
+       async function saveStoreSettings(e) {
            e.preventDefault();
            state.storeSettings.store_name = document.getElementById('adminStoreName').value;
            state.storeSettings.admin_wa_number = document.getElementById('adminWa').value;
            state.storeSettings.store_address = document.getElementById('adminAddress').value;
            state.storeSettings.payment_info = document.getElementById('adminPayment').value;
+           
+           const logoFileInput = document.getElementById('adminLogoFile');
+           const logoUrlInput = document.getElementById('adminLogoUrl').value;
+
+           if (logoFileInput.files && logoFileInput.files[0]) {
+               state.storeSettings.store_logo_url = await convertFileToBase64(logoFileInput.files[0]);
+           } else if (logoUrlInput) {
+               state.storeSettings.store_logo_url = logoUrlInput;
+           }
 
            localStorage.setItem('arenzhi_settings', JSON.stringify(state.storeSettings));
            renderAppHeader();
            updateFloatingWaLink();
-           alert('Pengaturan toko berhasil disimpan!');
+           alert('Pengaturan profil toko & logo berhasil disimpan!');
            router.navigate('admin');
        }
 
-       async function addNewProduct(e) {
+       async function handleProductSubmit(e) {
            e.preventDefault();
-           const newProd = {
-               id: 'prod-' + Date.now(),
-               title: document.getElementById('newProdTitle').value,
-               size_ml: document.getElementById('newProdSize').value,
-               price_final: Number(document.getElementById('newProdPrice').value),
-               price_original: Number(document.getElementById('newProdPrice').value),
-               image_url: document.getElementById('newProdImage').value,
-               description: document.getElementById('newProdDesc').value,
-               stock: 20,
-               is_promo: false
+           const editId = document.getElementById('editProductId').value;
+           const title = document.getElementById('newProdTitle').value;
+           const size = document.getElementById('newProdSize').value;
+           const priceOriginal = Number(document.getElementById('newProdPrice').value);
+           const discount = Number(document.getElementById('newProdDiscount').value) || 0;
+           const stock = Number(document.getElementById('newProdStock').value) || 20;
+           const desc = document.getElementById('newProdDesc').value;
+           const urlInput = document.getElementById('newProdImage').value;
+           const fileInput = document.getElementById('newProdFile');
+
+           let imageUrl = urlInput || 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?w=600';
+           if (fileInput.files && fileInput.files[0]) {
+               imageUrl = await convertFileToBase64(fileInput.files[0]);
+           }
+
+           const priceFinal = discount > 0 ? priceOriginal - (priceOriginal * discount / 100) : priceOriginal;
+           const isPromo = discount > 0;
+
+           const productData = {
+               id: editId || ('prod-' + Date.now()),
+               title: title,
+               size_ml: size,
+               price_original: priceOriginal,
+               discount_percent: discount,
+               price_final: priceFinal,
+               is_promo: isPromo,
+               image_url: imageUrl,
+               description: desc,
+               stock: stock
            };
 
            try {
-               await supabaseClient.from('products').upsert(newProd);
-               state.products.unshift(newProd);
-               alert('Produk baru berhasil ditambahkan!');
+               await supabaseClient.from('products').upsert(productData);
+               if (editId) {
+                   const index = state.products.findIndex(p => p.id === editId);
+                   if (index !== -1) state.products[index] = productData;
+                   alert('Produk berhasil diperbarui!');
+               } else {
+                   state.products.unshift(productData);
+                   alert('Produk baru berhasil ditambahkan!');
+               }
+               resetProductForm();
                router.navigate('admin');
            } catch (err) {
-               alert('Gagal menambah produk ke database: ' + err.message);
+               alert('Gagal menyimpan produk: ' + err.message);
+           }
+       }
+
+       function startEditProduct(productId) {
+           const p = state.products.find(item => item.id === productId);
+           if (!p) return;
+           document.getElementById('editProductId').value = p.id;
+           document.getElementById('newProdTitle').value = p.title;
+           document.getElementById('newProdSize').value = p.size_ml || '';
+           document.getElementById('newProdPrice').value = p.price_original;
+           document.getElementById('newProdDiscount').value = p.discount_percent || 0;
+           document.getElementById('newProdStock').value = p.stock || 20;
+           document.getElementById('newProdDesc').value = p.description || '';
+           document.getElementById('newProdImage').value = p.image_url || '';
+           
+           document.getElementById('productFormTitle').innerText = 'Edit Produk Parfum';
+           document.getElementById('productSubmitBtn').innerText = 'Update Perubahan Produk';
+           document.getElementById('cancelEditBtn').classList.remove('hidden');
+           window.scrollTo({ top: 400, behavior: 'smooth' });
+       }
+
+       function resetProductForm() {
+           document.getElementById('editProductId').value = '';
+           document.getElementById('productFormTitle').innerText = 'Tambah Produk Parfum Baru';
+           document.getElementById('productSubmitBtn').innerText = 'Simpan & Tambah Produk';
+           document.getElementById('cancelEditBtn').classList.add('hidden');
+           document.querySelector('form').reset();
+       }
+
+       async function deleteProduct(productId) {
+           if (!confirm('Apakah Anda yakin ingin menghapus produk ini?')) return;
+           try {
+               await supabaseClient.from('products').delete().eq('id', productId);
+               state.products = state.products.filter(p => p.id !== productId);
+               alert('Produk berhasil dihapus!');
+               router.navigate('admin');
+           } catch (err) {
+               alert('Gagal menghapus produk: ' + err.message);
            }
        }
 
