@@ -4,13 +4,13 @@
    <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>Arenzhi Scent - Official Perfume Catalog & Store</title>
-   <!-- Tailwind CSS CDN (Production-safe configuration) -->
+   <!-- Tailwind CSS CDN -->
    <script src="https://cdn.tailwindcss.com"></script>
    <!-- Supabase JS SDK CDN -->
    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
    <!-- Lucide Icons -->
    <script src="https://unpkg.com/lucide@latest"></script>
-   <!-- PWA Manifest Data URI (Fixed quotes syntax) -->
+   <!-- PWA Manifest Data URI -->
    <link rel="manifest" href='data:application/manifest+json,{"name":"Arenzhi Scent","short_name":"Arenzhi","start_url":".","display":"standalone","background_color":"#ffffff","theme_color":"#0f172a","icons":[{"src":"https://api.iconify.design/lucide:sparkles.svg?color=%230f172a","sizes":"192x192","type":"image/svg+xml"}]}'>
    <style>
       @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
@@ -169,24 +169,17 @@
            lucide.createIcons();
        });
 
-       // Definisi fungsi loadLocalStorageGuestProfile yang sebelumnya missing
        function loadLocalStorageGuestProfile() {
            try {
                const saved = localStorage.getItem('arenzhi_guest');
-               if (saved) {
-                   state.guestProfile = JSON.parse(saved);
-               }
-           } catch (e) {
-               console.error("Gagal memuat guest profile:", e);
-           }
+               if (saved) state.guestProfile = JSON.parse(saved);
+           } catch (e) { console.error(e); }
        }
 
-       // Definisi fungsi openAdminAuthModal yang sebelumnya missing
        function openAdminAuthModal() {
            const password = prompt("Masukkan Password Admin:");
            if (password === "arenzhi2026" || password === "admin") {
                state.isAdmin = true;
-               alert("Login Admin Berhasil!");
                router.navigate('admin');
            } else if (password !== null) {
                alert("Password salah!");
@@ -245,8 +238,7 @@
        function handleSearch(query) {
            state.searchQuery = query;
            if (state.currentView === 'home') {
-               const container = document.getElementById('appView');
-               container.innerHTML = renderHomeView();
+               document.getElementById('appView').innerHTML = renderHomeView();
                lucide.createIcons();
            }
        }
@@ -495,12 +487,134 @@
            `;
        }
 
+       // PANEL ADMIN DENGAN PENGATURAN TOKO DAN TAMBAH PRODUK LENGKAP
        function renderAdminView() {
-           return `<div class="max-w-4xl mx-auto bg-white p-8 rounded-3xl shadow-sm space-y-6">
-               <h2 class="text-2xl font-bold">Panel Admin - Pengaturan Toko & Pesanan</h2>
-               <p class="text-sm text-slate-600">Admin mode aktif. Total pesanan tersimpan: ${state.orders.length}</p>
-               <button onclick="router.navigate('home')" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold">Kembali ke Beranda</button>
-           </div>`;
+           const s = state.storeSettings;
+           return `
+               <div class="max-w-4xl mx-auto space-y-8">
+                   <div class="flex items-center justify-between">
+                       <div>
+                           <h2 class="text-2xl font-bold text-slate-900">Panel Admin & Pengaturan Toko</h2>
+                           <p class="text-sm text-slate-500">Kelola profil toko, nomor WA, alamat, rekening, dan tambah produk.</p>
+                       </div>
+                       <button onclick="router.navigate('home')" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold">Kembali ke Beranda</button>
+                   </div>
+
+                   <!-- Form Pengaturan Profil Toko -->
+                   <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                       <h3 class="font-bold text-lg text-slate-900 border-b pb-2">Informasi Profil Toko</h3>
+                       <form onsubmit="saveStoreSettings(event)" class="space-y-4">
+                           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                               <div>
+                                   <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Toko</label>
+                                   <input type="text" id="adminStoreName" value="${s.store_name || ''}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" required>
+                               </div>
+                               <div>
+                                   <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor WhatsApp Admin (Awali 62)</label>
+                                   <input type="text" id="adminWa" value="${s.admin_wa_number || ''}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" required>
+                               </div>
+                           </div>
+                           <div>
+                               <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat Toko</label>
+                               <textarea id="adminAddress" rows="2" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" required>${s.store_address || ''}</textarea>
+                           </div>
+                           <div>
+                               <label class="block text-xs font-semibold text-slate-700 mb-1">Info Nomor Rekening Toko / Pembayaran</label>
+                               <textarea id="adminPayment" rows="2" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" required>${s.payment_info || ''}</textarea>
+                           </div>
+                           <button type="submit" class="py-2.5 px-6 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-md">Simpan Pengaturan Toko</button>
+                       </form>
+                   </div>
+
+                   <!-- Form Tambah Produk Baru -->
+                   <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                       <h3 class="font-bold text-lg text-slate-900 border-b pb-2">Tambah Produk Parfum Baru</h3>
+                       <form onsubmit="addNewProduct(event)" class="space-y-4">
+                           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                               <div>
+                                   <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Produk / Parfum</label>
+                                   <input type="text" id="newProdTitle" placeholder="Contoh: Arenzhi Royal Oud" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" required>
+                               </div>
+                               <div>
+                                   <label class="block text-xs font-semibold text-slate-700 mb-1">Ukuran (ml)</label>
+                                   <input type="text" id="newProdSize" placeholder="Contoh: 50ml" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" required>
+                               </div>
+                           </div>
+                           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                               <div>
+                                   <label class="block text-xs font-semibold text-slate-700 mb-1">Harga Jual (Rp)</label>
+                                   <input type="number" id="newProdPrice" placeholder="350000" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" required>
+                               </div>
+                               <div>
+                                   <label class="block text-xs font-semibold text-slate-700 mb-1">URL Gambar Produk</label>
+                                   <input type="url" id="newProdImage" placeholder="https://images.unsplash.com/..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" required>
+                               </div>
+                           </div>
+                           <div>
+                               <label class="block text-xs font-semibold text-slate-700 mb-1">Deskripsi Aroma</label>
+                               <textarea id="newProdDesc" rows="2" placeholder="Deskripsi keharuman parfum..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" required></textarea>
+                           </div>
+                           <button type="submit" class="py-2.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-md">Simpan & Tambah Produk</button>
+                       </form>
+                   </div>
+
+                   <!-- Daftar Pesanan Masuk -->
+                   <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                       <h3 class="font-bold text-lg text-slate-900 border-b pb-2">Daftar Pesanan Masuk (${state.orders.length})</h3>
+                       ${state.orders.length === 0 ? '<p class="text-sm text-slate-500">Belum ada pesanan masuk.</p>' : 
+                           state.orders.map(o => `
+                               <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col sm:flex-row justify-between gap-2">
+                                   <div>
+                                       <span class="font-bold text-sm text-slate-900">${o.order_id}</span> - <span class="text-xs text-slate-600">${o.customer_name} (${o.customer_phone})</span>
+                                       <p class="text-xs text-slate-500 mt-1">Alamat: ${o.shipping_address}</p>
+                                   </div>
+                                   <div class="text-right">
+                                       <div class="font-bold text-sm text-slate-900">Rp ${Number(o.gross_amount).toLocaleString('id-ID')}</div>
+                                       <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">QRIS Generated</span>
+                                   </div>
+                               </div>
+                           `).join('')}
+                   </div>
+               </div>
+           `;
+       }
+
+       function saveStoreSettings(e) {
+           e.preventDefault();
+           state.storeSettings.store_name = document.getElementById('adminStoreName').value;
+           state.storeSettings.admin_wa_number = document.getElementById('adminWa').value;
+           state.storeSettings.store_address = document.getElementById('adminAddress').value;
+           state.storeSettings.payment_info = document.getElementById('adminPayment').value;
+
+           localStorage.setItem('arenzhi_settings', JSON.stringify(state.storeSettings));
+           renderAppHeader();
+           updateFloatingWaLink();
+           alert('Pengaturan toko berhasil disimpan!');
+           router.navigate('admin');
+       }
+
+       async function addNewProduct(e) {
+           e.preventDefault();
+           const newProd = {
+               id: 'prod-' + Date.now(),
+               title: document.getElementById('newProdTitle').value,
+               size_ml: document.getElementById('newProdSize').value,
+               price_final: Number(document.getElementById('newProdPrice').value),
+               price_original: Number(document.getElementById('newProdPrice').value),
+               image_url: document.getElementById('newProdImage').value,
+               description: document.getElementById('newProdDesc').value,
+               stock: 20,
+               is_promo: false
+           };
+
+           try {
+               await supabaseClient.from('products').upsert(newProd);
+               state.products.unshift(newProd);
+               alert('Produk baru berhasil ditambahkan!');
+               router.navigate('admin');
+           } catch (err) {
+               alert('Gagal menambah produk ke database: ' + err.message);
+           }
        }
 
        function renderInvoiceView(orderId) {
