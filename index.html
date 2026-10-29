@@ -115,17 +115,14 @@
        </div>
    </div>
 
-   <!-- FLOATING BUTTONS CONTAINER (BERBAGI LINK DI ATAS TOMBOL WA) -->
+   <!-- FLOATING BUTTONS CONTAINER -->
    <div id="floatingButtonsContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 items-end">
-       <!-- Tombol Mengambang Berbagi Link -->
        <button onclick="shareStoreLink()" class="flex items-center justify-center w-12 h-12 bg-slate-900 hover:bg-slate-800 text-white rounded-full shadow-xl transition-all duration-300 hover:scale-110 group relative">
            <i data-lucide="share-2" class="w-5 h-5"></i>
            <span class="absolute right-14 bg-slate-900 text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap pointer-events-none">
                Bagikan Link Toko
            </span>
        </button>
-
-       <!-- Tombol Mengambang WhatsApp -->
        <a id="floatingWaBtn" href="#" target="_blank" class="flex items-center justify-center w-14 h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full shadow-2xl transition-all duration-300 hover:scale-110 group relative">
            <i data-lucide="message-circle" class="w-7 h-7"></i>
            <span class="absolute right-16 bg-slate-900 text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap pointer-events-none">
@@ -134,7 +131,7 @@
        </a>
    </div>
 
-   <!-- SCRIPT APPLICATION LOGIC -->
+   <!-- APPLICATION LOGIC SCRIPT -->
    <script>
        const SUPABASE_URL = "https://dnizwwfgocdrbevvsiyi.supabase.co";
        const SUPABASE_ANON_KEY = "sb_publishable_jvFwPfnF3xVKVCqkefItzA_GWMMFkwz";
@@ -549,7 +546,7 @@
 
            const subtotal = state.cart.reduce((sum, item) => sum + (item.price_final * item.qty), 0);
            const grossAmount = subtotal + currentOngkir;
-           const orderId = 'ORD-' + Date.now();
+           const orderId = 'ARENZHI-' + Math.floor(100000 + Math.random() * 900000);
 
            const orderData = {
                order_id: orderId,
@@ -557,7 +554,7 @@
                customer_phone: phone,
                shipping_address: address,
                courier: currentCourier,
-               tracking_number: '',
+               tracking_number: 'RES-' + Math.floor(100000000 + Math.random() * 900000000),
                items: state.cart,
                subtotal: subtotal,
                ongkir: currentOngkir,
@@ -656,7 +653,7 @@
            `;
        }
 
-       // --- PANEL ADMIN DENGAN PERBAIKAN RENDER PDF & KIRIM FAKTUR PROFESIONAL ---
+       // --- PANEL ADMIN & FAKTUR PDF PROFESIONAL ---
        let editingProductId = null;
 
        function renderAdminView() {
@@ -840,7 +837,7 @@
            }
        }
 
-       // --- GENERATOR FAKTUR PDF PROFESIONAL (FIXED: RENDER DOM TEMPLATE TIDAK KOSONG) ---
+       // --- FUNGSI UTAMA GENERATE FAKTUR PDF DENGAN ID "printableInvoice" ---
        function downloadPdfInvoice(orderId) {
            const order = state.orders.find(o => o.order_id === orderId);
            if (!order) return;
@@ -852,8 +849,9 @@
 
            const s = state.storeSettings;
 
-           // Buat elemen kontainer PDF secara dinamis agar ter-render sempurna tanpa kosong (blank)
+           // Membuat elemen container ber-ID "printableInvoice" sesuai kriteria revisi
            const container = document.createElement('div');
+           container.id = 'printableInvoice';
            container.style.position = 'absolute';
            container.style.left = '-9999px';
            container.style.top = '0';
@@ -879,7 +877,7 @@
 
            container.innerHTML = `
                <div style="max-width: 170mm; margin: 0 auto;">
-                   <!-- Header Faktur -->
+                   <!-- Header Identitas Toko -->
                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 20px;">
                        <div style="display: flex; align-items: center; gap: 12px;">
                            ${logoHtml}
@@ -890,27 +888,27 @@
                        </div>
                        <div style="text-align: right;">
                            <h1 style="font-size: 22px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.5px;">FAKTUR PENJUALAN</h1>
-                           <p style="font-size: 11px; color: #64748b; margin: 4px 0 0 0;">ID: ${order.order_id}</p>
+                           <p style="font-size: 11px; color: #64748b; margin: 4px 0 0 0;">ID Pesanan: ${order.order_id}</p>
                        </div>
                    </div>
 
-                   <!-- Info Pelanggan & Pengiriman -->
+                   <!-- Tabel Informasi Pelanggan & Kurir Pengiriman -->
                    <div style="display: flex; justify-content: space-between; background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 20px; font-size: 11px;">
                        <div>
-                           <p style="font-weight: bold; color: #0f172a; margin: 0 0 4px 0;">KEPADA YTH:</p>
+                           <p style="font-weight: bold; color: #0f172a; margin: 0 0 4px 0;">INFORMASI PELANGGAN:</p>
                            <p style="font-weight: 600; margin: 0; color: #1e293b;">${order.customer_name}</p>
-                           <p style="margin: 2px 0; color: #475569;">${order.customer_phone}</p>
-                           <p style="margin: 2px 0 0 0; color: #475569; max-width: 280px;">${order.shipping_address}</p>
+                           <p style="margin: 2px 0; color: #475569;">No HP: ${order.customer_phone}</p>
+                           <p style="margin: 2px 0 0 0; color: #475569; max-width: 280px;">Alamat: ${order.shipping_address}</p>
                        </div>
                        <div style="text-align: right;">
-                           <p style="font-weight: bold; color: #0f172a; margin: 0 0 4px 0;">DETAIL PENGIRIMAN:</p>
+                           <p style="font-weight: bold; color: #0f172a; margin: 0 0 4px 0;">INFORMASI PENGIRIMAN:</p>
                            <p style="margin: 0; color: #475569;">Kurir: <strong>${order.courier}</strong></p>
                            <p style="margin: 2px 0; color: #475569;">No. Resi: <strong style="color: #0f172a;">${trackingNumber || '-'}</strong></p>
                            <p style="margin: 2px 0 0 0; color: #475569;">Tanggal: ${new Date(order.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}</p>
                        </div>
                    </div>
 
-                   <!-- Tabel Produk -->
+                   <!-- Rincian Tabel Produk yang Dibeli -->
                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px;">
                        <thead>
                            <tr style="background: #0f172a; color: #ffffff;">
@@ -925,7 +923,7 @@
                        </tbody>
                    </table>
 
-                   <!-- Total Pembayaran -->
+                   <!-- Rincian Total Pembayaran Akhir -->
                    <div style="display: flex; justify-content: flex-end; margin-bottom: 30px;">
                        <div style="width: 220px; font-size: 11px;">
                            <div style="display: flex; justify-content: space-between; padding: 4px 0; color: #475569;">
@@ -933,7 +931,7 @@
                                <strong>Rp ${Number(order.subtotal).toLocaleString('id-ID')}</strong>
                            </div>
                            <div style="display: flex; justify-content: space-between; padding: 4px 0; color: #475569;">
-                               <span>Biaya Ongkir:</span>
+                               <span>Ongkir (${order.courier}):</span>
                                <strong>Rp ${Number(order.ongkir).toLocaleString('id-ID')}</strong>
                            </div>
                            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-top: 2px solid #0f172a; font-size: 13px; font-weight: bold; color: #0f172a;">
@@ -946,7 +944,7 @@
                    <!-- Footer Faktur -->
                    <div style="border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center; font-size: 10px; color: #94a3b8;">
                        <p style="margin: 0; font-weight: 600; color: #1e293b;">Terima kasih telah berbelanja di ${s.store_name || 'Arenzhi Scent'}!</p>
-                       <p style="margin: 2px 0 0 0;">Faktur digital ini sah dan diterbitkan secara otomatis oleh Sistem Toko.</p>
+                       <p style="margin: 2px 0 0 0;">Faktur digital profesional ini diterbitkan secara resmi oleh sistem toko.</p>
                    </div>
                </div>
            `;
@@ -961,9 +959,10 @@
                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
            };
 
+           // Eksekusi html2pdf untuk unduh otomatis tanpa merusak layout web app
            html2pdf().from(container).set(opt).save().then(() => {
                document.body.removeChild(container);
-               alert('Faktur PDF profesional berhasil diunduh dengan rapi!');
+               alert('Faktur PDF profesional berhasil diunduh secara otomatis!');
            }).catch(err => {
                document.body.removeChild(container);
                alert('Gagal mendownload PDF: ' + err.message);
@@ -982,7 +981,7 @@
 
            let itemsText = order.items.map(i => `• ${i.title} (${i.qty}x) - Rp ${Number(i.price_final * i.qty).toLocaleString('id-ID')}`).join('\n');
            
-           const message = `✨ *FAKTUR & RESI RESMI - ${state.storeSettings.store_name}* ✨\n\nHalo Kak *${order.customer_name}*,\nTerima kasih telah berbelanja parfum eksklusif di toko kami! 🛍️\n\n*ID Pesanan:* ${order.order_id}\n*Kurir:* ${order.courier}\n*No. Resi Pengiriman:* *${trackingNumber || 'Segera Diperbarui'}*\n*Alamat Tujuan:* ${order.shipping_address}\n\n*Rincian Pesanan:*\n${itemsText}\n• Ongkir (${order.courier}): Rp ${Number(order.ongkir).toLocaleString('id-ID')}\n\n*Total Tagihan: Rp ${Number(order.gross_amount).toLocaleString('id-ID')}*\nStatus Pembayaran: *LUNAS (Verified)*\n\nFaktur PDF profesional telah diunduh di perangkat admin untuk dikirimkan kepada Anda. Terima kasih atas kepercayaan Anda kepada *${state.storeSettings.store_name}*! 🙏✨`;
+           const message = `✨ *FAKTUR & RESI RESMI - ${state.storeSettings.store_name}* ✨\n\nHalo Kak *${order.customer_name}*,\nTerima kasih telah berbelanja parfum eksklusif di toko kami! 🛍️\n\n*ID Pesanan:* ${order.order_id}\n*Kurir:* ${order.courier}\n*No. Resi Pengiriman:* *${trackingNumber || 'Segera Diperbarui'}*\n*Alamat Tujuan:* ${order.shipping_address}\n\n*Rincian Pesanan:*\n${itemsText}\n• Ongkir (${order.courier}): Rp ${Number(order.ongkir).toLocaleString('id-ID')}\n\n*Total Tagihan: Rp ${Number(order.gross_amount).toLocaleString('id-ID')}*\nStatus Pembayaran: *LUNAS (Verified)*\n\nFaktur PDF profesional telah diunduh di perangkat admin untuk diteruskan kepada Anda. Terima kasih atas kepercayaan Anda kepada *${state.storeSettings.store_name}*! 🙏✨`;
 
            let phone = order.customer_phone.replace(/\D/g, '');
            if (phone.startsWith('0')) {
@@ -992,7 +991,6 @@
            const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
            window.open(waUrl, '_blank');
            
-           // Otomatis unduh PDF faktur ke perangkat
            downloadPdfInvoice(orderId);
        }
 
@@ -1069,7 +1067,7 @@
                    alert('Produk berhasil diperbarui!');
                } else {
                    state.products.unshift(productData);
-                   alert('Produk baru berhasil ditambah!');
+                   alert('Produk baru berhasil ditambahkan!');
                }
                resetProductForm();
                router.navigate('admin');
