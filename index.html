@@ -84,7 +84,7 @@
        </div>
    </footer>
 
-   <!-- CART SIDEBAR MODAL (DENGAN KONTROL QTY & TOMBOL HAPUS) -->
+   <!-- CART SIDEBAR MODAL -->
    <div id="cartModal" class="fixed inset-0 z-50 overflow-hidden hidden">
        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity" onclick="toggleCartModal(false)"></div>
        <div class="absolute inset-y-0 right-0 max-w-full flex pl-10">
@@ -311,7 +311,7 @@
                                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900">${product.title}</h2>
                                <div class="mt-3 flex items-baseline gap-3">
                                    <span class="text-2xl font-bold text-slate-900">Rp ${Number(product.price_final).toLocaleString('id-ID')}</span>
-                                   ${product.is_promo && product.price_original > product.price_final ? `<span class="text-sm text-slate-400 line-through">Rp ${Number(product.price_original).toLocaleString('id-ID')}</span>` : ''}
+                                   ${p.is_promo && p.price_original > p.price_final ? `<span class="text-sm text-slate-400 line-through">Rp ${Number(product.price_original).toLocaleString('id-ID')}</span>` : ''}
                                </div>
                            </div>
                            <p class="text-slate-600 text-sm leading-relaxed">${product.description || 'Tidak ada deskripsi.'}</p>
@@ -324,7 +324,6 @@
            `;
        }
 
-       // --- REVISI 1: KERANJANG DENGAN KONTROL QTY DAN TOMBOL HAPUS ---
        function renderCartItems() {
            const container = document.getElementById('cartItemsContainer');
            const subtotalEl = document.getElementById('cartSubtotalText');
@@ -402,7 +401,21 @@
 
        function proceedToCheckout() { toggleCartModal(false); router.navigate('checkout'); }
 
-       // --- REVISI 2: CHECKOUT DENGAN PILIHAN EKSPEDISI & ZONA ---
+       // --- REVISI 1: AUTO-SAVE INPUT FORM AGAR TIDAK HILANG SAAT GANTI EKSPEDISI/ZONA ---
+       function saveGuestInputTemp() {
+           const nameEl = document.getElementById('checkoutName');
+           const phoneEl = document.getElementById('checkoutPhone');
+           const addressEl = document.getElementById('checkoutAddress');
+           if (nameEl && phoneEl && addressEl) {
+               state.guestProfile = {
+                   nama: nameEl.value,
+                   no_hp: phoneEl.value,
+                   alamat_lengkap: addressEl.value
+               };
+               localStorage.setItem('arenzhi_guest', JSON.stringify(state.guestProfile));
+           }
+       }
+
        function renderCheckoutView() {
            if (state.cart.length === 0) {
                return `<div class="text-center py-20 space-y-4">
@@ -423,22 +436,22 @@
                            <h3 class="font-bold text-base text-slate-900 border-b pb-2">1. Informasi Penerima</h3>
                            <div>
                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap</label>
-                               <input type="text" id="checkoutName" required value="${savedUser.nama || ''}" placeholder="Masukkan nama lengkap" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-slate-900">
+                               <input type="text" id="checkoutName" required oninput="saveGuestInputTemp()" value="${savedUser.nama || ''}" placeholder="Masukkan nama lengkap" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-slate-900">
                            </div>
                            <div>
                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor WhatsApp / HP</label>
-                               <input type="tel" id="checkoutPhone" required value="${savedUser.no_hp || ''}" placeholder="Contoh: 08123456789" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-slate-900">
+                               <input type="tel" id="checkoutPhone" required oninput="saveGuestInputTemp()" value="${savedUser.no_hp || ''}" placeholder="Contoh: 08123456789" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-slate-900">
                            </div>
                            <div>
                                <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat Lengkap Pengiriman</label>
-                               <textarea id="checkoutAddress" required rows="3" placeholder="Jalan, Nomor Rumah, RT/RW, Kecamatan, Kota" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-slate-900">${savedUser.alamat_lengkap || ''}</textarea>
+                               <textarea id="checkoutAddress" required rows="3" oninput="saveGuestInputTemp()" placeholder="Jalan, Nomor Rumah, RT/RW, Kecamatan, Kota" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-slate-900">${savedUser.alamat_lengkap || ''}</textarea>
                            </div>
                        </div>
 
                        <!-- Pilih Zona Wilayah -->
                        <div class="space-y-4 pt-2">
                            <h3 class="font-bold text-base text-slate-900 border-b pb-2">2. Pilih Wilayah / Provinsi Tujuan</h3>
-                           <select id="shippingZoneSelect" onchange="changeShippingZone(this.value)" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:bg-white focus:outline-none focus:border-slate-900">
+                           <select id="shippingZoneSelect" onchange="saveGuestInputTemp(); changeShippingZone(this.value);" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:bg-white focus:outline-none focus:border-slate-900">
                                <option value="jatim" ${currentZone === 'jatim' ? 'selected' : ''}>Jawa Timur (Sesama Provinsi)</option>
                                <option value="jateng_diy" ${currentZone === 'jateng_diy' ? 'selected' : ''}>Jawa Tengah & D.I. Yogyakarta</option>
                                <option value="jabar_banten_dki" ${currentZone === 'jabar_banten_dki' ? 'selected' : ''}>Jawa Barat, Banten & DKI Jakarta</option>
@@ -451,22 +464,22 @@
                            <h3 class="font-bold text-base text-slate-900 border-b pb-2">3. Pilih Ekspedisi & Kurir</h3>
                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                <label class="border rounded-xl p-3 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${currentCourier === 'JNE' ? 'border-slate-900 bg-slate-50 font-bold' : ''}">
-                                   <input type="radio" name="courier" value="JNE" ${currentCourier === 'JNE' ? 'checked' : ''} class="hidden" onchange="updateCourierChoice('JNE', ${rates.jne})">
+                                   <input type="radio" name="courier" value="JNE" ${currentCourier === 'JNE' ? 'checked' : ''} class="hidden" onchange="saveGuestInputTemp(); updateCourierChoice('JNE', ${rates.jne})">
                                    <span class="font-bold text-sm">JNE Reguler</span>
                                    <span class="text-xs text-slate-500">Rp ${rates.jne.toLocaleString('id-ID')}</span>
                                </label>
                                <label class="border rounded-xl p-3 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${currentCourier === 'J&T' ? 'border-slate-900 bg-slate-50 font-bold' : ''}">
-                                   <input type="radio" name="courier" value="J&T" ${currentCourier === 'J&T' ? 'checked' : ''} class="hidden" onchange="updateCourierChoice('J&T', ${rates.jnt})">
+                                   <input type="radio" name="courier" value="J&T" ${currentCourier === 'J&T' ? 'checked' : ''} class="hidden" onchange="saveGuestInputTemp(); updateCourierChoice('J&T', ${rates.jnt})">
                                    <span class="font-bold text-sm">J&T Express</span>
                                    <span class="text-xs text-slate-500">Rp ${rates.jnt.toLocaleString('id-ID')}</span>
                                </label>
                                <label class="border rounded-xl p-3 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${currentCourier === 'SiCepat' ? 'border-slate-900 bg-slate-50 font-bold' : ''}">
-                                   <input type="radio" name="courier" value="SiCepat" ${currentCourier === 'SiCepat' ? 'checked' : ''} class="hidden" onchange="updateCourierChoice('SiCepat', ${rates.sicepat})">
+                                   <input type="radio" name="courier" value="SiCepat" ${currentCourier === 'SiCepat' ? 'checked' : ''} class="hidden" onchange="saveGuestInputTemp(); updateCourierChoice('SiCepat', ${rates.sicepat})">
                                    <span class="font-bold text-sm">SiCepat REG</span>
                                    <span class="text-xs text-slate-500">Rp ${rates.sicepat.toLocaleString('id-ID')}</span>
                                </label>
                                <label class="border rounded-xl p-3 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${currentCourier === 'POS' ? 'border-slate-900 bg-slate-50 font-bold' : ''}">
-                                   <input type="radio" name="courier" value="POS" ${currentCourier === 'POS' ? 'checked' : ''} class="hidden" onchange="updateCourierChoice('POS', ${rates.pos})">
+                                   <input type="radio" name="courier" value="POS" ${currentCourier === 'POS' ? 'checked' : ''} class="hidden" onchange="saveGuestInputTemp(); updateCourierChoice('POS', ${rates.pos})">
                                    <span class="font-bold text-sm">POS Indonesia</span>
                                    <span class="text-xs text-slate-500">Rp ${rates.pos.toLocaleString('id-ID')}</span>
                                </label>
@@ -499,8 +512,10 @@
            router.navigate('checkout');
        }
 
+       // --- REVISI 2: ROBUST CHECKOUT FALLBACK UNTUK STATIC HOSTING / GITHUB PAGES ---
        async function processCheckout(e) {
            e.preventDefault();
+           saveGuestInputTemp();
            const name = document.getElementById('checkoutName').value;
            const phone = document.getElementById('checkoutPhone').value;
            const address = document.getElementById('checkoutAddress').value;
@@ -526,22 +541,39 @@
                const submitBtn = e.target.querySelector('button[type="submit"]');
                if (submitBtn) { submitBtn.innerText = 'Membuat QRIS Dinamis...'; submitBtn.disabled = true; }
 
-               const response = await fetch('/api/generate-qris', {
-                   method: 'POST',
-                   headers: { 'Content-Type': 'application/json' },
-                   body: JSON.stringify({
-                       order_id: orderId,
-                       gross_amount: grossAmount,
-                       customer_details: { first_name: name, phone: phone, email: 'customer@arenzhi.com' },
-                       item_details: state.cart.map(i => ({ id: i.id, price: i.price_final, quantity: i.qty, name: i.title.substring(0, 50) }))
-                   })
-               });
+               let qrisUrl = null;
+               let qrString = null;
 
-               const result = await response.json();
-               if (!response.ok) throw new Error(result.error || 'Gagal menghasilkan QRIS.');
+               // Coba fetch ke serverless API Vercel (/api/generate-qris)
+               try {
+                   const response = await fetch('/api/generate-qris', {
+                       method: 'POST',
+                       headers: { 'Content-Type': 'application/json' },
+                       body: JSON.stringify({
+                           order_id: orderId,
+                           gross_amount: grossAmount,
+                           customer_details: { first_name: name, phone: phone, email: 'customer@arenzhi.com' },
+                           item_details: state.cart.map(i => ({ id: i.id, price: i.price_final, quantity: i.qty, name: i.title.substring(0, 50) }))
+                       })
+                   });
+                   const contentType = response.headers.get("content-type");
+                   if (contentType && contentType.includes("application/json") && response.ok) {
+                       const result = await response.json();
+                       qrisUrl = result.actions && result.actions[0] ? result.actions[0].url : null;
+                       qrString = result.qr_string || null;
+                   }
+               } catch (apiErr) {
+                   console.log("Backend serverless tidak aktif (Static hosting detected), menggunakan QRIS Fallback lokal.");
+               }
 
-               orderData.qris_url = result.actions && result.actions[0] ? result.actions[0].url : null;
-               orderData.qr_string = result.qr_string || null;
+               // Fallback jika dijalankan di GitHub Pages / Static Hosting tanpa backend Vercel
+               if (!qrisUrl) {
+                   qrString = `00020101021226680016ID.CO.MIDTRANS.WWW0118936009140000000000303UAG0215${orderId}53033605802ID5910ArenzhiScent6006Malang6304`;
+                   qrisUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrString)}`;
+               }
+
+               orderData.qris_url = qrisUrl;
+               orderData.qr_string = qrString;
 
                state.orders.push(orderData);
                localStorage.setItem('arenzhi_orders', JSON.stringify(state.orders));
@@ -556,7 +588,7 @@
            }
        }
 
-       // --- REVISI 2 LANJUTAN: HALAMAN PEMBAYARAN DENGAN QRIS & REKENING ADMIN ---
+       // --- HALAMAN PEMBAYARAN DENGAN QRIS & REKENING ADMIN ---
        function renderPaymentView(orderId) {
            const order = state.orders.find(o => o.order_id === orderId);
            if (!order) return `<div class="text-center py-20">Data pesanan tidak ditemukan.</div>`;
@@ -576,18 +608,18 @@
                        <div class="text-3xl font-extrabold text-slate-900">Rp ${Number(order.gross_amount).toLocaleString('id-ID')}</div>
                    </div>
 
-                   <!-- PILIHAN 1: QRIS DINAMIS MIDTRANS -->
+                   <!-- OPSI A: QRIS -->
                    <div class="p-6 bg-white border border-slate-200 rounded-2xl space-y-3">
-                       <h3 class="font-bold text-sm text-slate-900">Opsi A: Scan QRIS (Otomatis)</h3>
+                       <h3 class="font-bold text-sm text-slate-900">Opsi A: Scan QRIS</h3>
                        ${order.qris_url ? `
                            <div class="p-4 bg-slate-50 border rounded-2xl inline-block shadow-inner">
-                               <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(order.qr_string || order.qris_url)}" alt="QRIS Code" class="mx-auto rounded-xl">
+                               <img src="${order.qris_url.startsWith('http') && !order.qris_url.includes('api.qrserver.com') ? 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(order.qr_string || order.qris_url) : order.qris_url}" alt="QRIS Code" class="mx-auto rounded-xl">
                            </div>
                        ` : `<p class="text-sm text-red-500">QRIS URL belum tersedia.</p>`}
                        <p class="text-xs text-slate-500">Dapat diskan via GoPay, OVO, DANA, ShopeePay, atau m-Banking.</p>
                    </div>
 
-                   <!-- PILIHAN 2: TRANSFER REKENING ADMIN -->
+                   <!-- OPSI B: TRANSFER REKENING ADMIN -->
                    <div class="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-left space-y-2">
                        <h3 class="font-bold text-sm text-slate-900 border-b pb-2">Opsi B: Transfer Rekening Bank Toko</h3>
                        <p class="text-xs text-slate-700 whitespace-pre-line leading-relaxed font-medium">${paymentInfo}</p>
