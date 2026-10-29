@@ -849,7 +849,7 @@
 
            const s = state.storeSettings;
 
-           // Membuat elemen container ber-ID "printableInvoice" sesuai kriteria revisi
+           // Membuat elemen container ber-ID "printableInvoice" secara dinamis agar ter-render sempurna tanpa kosong (blank)
            const container = document.createElement('div');
            container.id = 'printableInvoice';
            container.style.position = 'absolute';
@@ -959,7 +959,6 @@
                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
            };
 
-           // Eksekusi html2pdf untuk unduh otomatis tanpa merusak layout web app
            html2pdf().from(container).set(opt).save().then(() => {
                document.body.removeChild(container);
                alert('Faktur PDF profesional berhasil diunduh secara otomatis!');
