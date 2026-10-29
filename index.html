@@ -656,7 +656,7 @@
            `;
        }
 
-       // --- PANEL ADMIN DENGAN TOMBOL SIMPAN RESI & GENERATE PDF PROFESIONAL ---
+       // --- PANEL ADMIN DENGAN PERBAIKAN RENDER PDF & KIRIM FAKTUR PROFESIONAL ---
        let editingProductId = null;
 
        function renderAdminView() {
@@ -816,87 +816,12 @@
                                                <i data-lucide="download" class="w-3.5 h-3.5"></i> Unduh PDF Faktur
                                            </button>
                                            <button onclick="sendInvoiceWhatsApp('${o.order_id}')" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-md flex items-center justify-center gap-1.5">
-                                               <i data-lucide="send" class="w-3.5 h-3.5"></i> Kirim WA & Faktur
+                                               <i data-lucide="send" class="w-3.5 h-3.5"></i> Kirim WA & Faktur PDF
                                            </button>
                                        </div>
                                    </div>
                                </div>
                            `).join('')}
-                   </div>
-               </div>
-
-               <!-- TEMPLATE FAKTUR PDF PROFESIONAL (HIDDEN CONTAINER FOR HTML2PDF) -->
-               <div id="pdfInvoiceTemplate" style="display:none; width: 210mm; background: #ffffff; padding: 20mm; font-family: 'Plus Jakarta Sans', sans-serif; color: #1e293b;">
-                   <div id="pdfContentInner" style="max-width: 170mm; margin: 0 auto;">
-                       <!-- Header Faktur -->
-                       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 20px;">
-                           <div style="display: flex; align-items: center; gap: 12px;">
-                               <div id="pdfLogoBox" style="width: 50px; height: 50px; background: #0f172a; color: #ffffff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; overflow: hidden;">A</div>
-                               <div>
-                                   <h2 id="pdfStoreName" style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0; line-height: 1.2;">Arenzhi Scent</h2>
-                                   <p id="pdfStoreAddress" style="font-size: 10px; color: #64748b; margin: 2px 0 0 0; max-width: 250px;">Dusun Sumberagung Desa Bandungrejo Bantur Malang</p>
-                               </div>
-                           </div>
-                           <div style="text-align: right;">
-                               <h1 style="font-size: 22px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.5px;">FAKTUR PENJUALAN</h1>
-                               <p id="pdfOrderId" style="font-size: 11px; color: #64748b; margin: 4px 0 0 0;">ID: ORD-123456789</p>
-                           </div>
-                       </div>
-
-                       <!-- Info Pelanggan & Pengiriman -->
-                       <div style="display: flex; justify-content: space-between; background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 20px; font-size: 11px;">
-                           <div>
-                               <p style="font-weight: bold; color: #0f172a; margin: 0 0 4px 0;">KEPADA YTH:</p>
-                               <p id="pdfCustomerName" style="font-weight: 600; margin: 0; color: #1e293b;">Nama Pelanggan</p>
-                               <p id="pdfCustomerPhone" style="margin: 2px 0; color: #475569;">08123456789</p>
-                               <p id="pdfCustomerAddress" style="margin: 2px 0 0 0; color: #475569; max-width: 280px;">Alamat Pengiriman Lengkap</p>
-                           </div>
-                           <div style="text-align: right;">
-                               <p style="font-weight: bold; color: #0f172a; margin: 0 0 4px 0;">DETAIL PENGIRIMAN:</p>
-                               <p style="margin: 0; color: #475569;">Kurir: <strong id="pdfCourier">JNE Regular</strong></p>
-                               <p style="margin: 2px 0; color: #475569;">No. Resi: <strong id="pdfTracking" style="color: #0f172a;">-</strong></p>
-                               <p style="margin: 2px 0 0 0; color: #475569;">Tanggal: <span id="pdfDate">29 Oktober 2026</span></p>
-                           </div>
-                       </div>
-
-                       <!-- Tabel Produk -->
-                       <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px;">
-                           <thead>
-                               <tr style="background: #0f172a; color: #ffffff;">
-                                   <th style="padding: 10px; text-align: left;">Nama Produk Parfum</th>
-                                   <th style="padding: 10px; text-align: center;">Qty</th>
-                                   <th style="padding: 10px; text-align: right;">Harga Satuan</th>
-                                   <th style="padding: 10px; text-align: right;">Subtotal</th>
-                               </tr>
-                           </thead>
-                           <tbody id="pdfTableBody">
-                               <!-- Dynamic Items -->
-                           </tbody>
-                       </table>
-
-                       <!-- Total Pembayaran -->
-                       <div style="display: flex; justify-content: flex-end; margin-bottom: 30px;">
-                           <div style="width: 220px; font-size: 11px;">
-                               <div style="display: flex; justify-content: space-between; padding: 4px 0; color: #475569;">
-                                   <span>Subtotal Produk:</span>
-                                   <strong id="pdfSubtotal">Rp 0</strong>
-                               </div>
-                               <div style="display: flex; justify-content: space-between; padding: 4px 0; color: #475569;">
-                                   <span>Biaya Ongkir:</span>
-                                   <strong id="pdfOngkir">Rp 0</strong>
-                               </div>
-                               <div style="display: flex; justify-content: space-between; padding: 8px 0; border-top: 2px solid #0f172a; font-size: 13px; font-weight: bold; color: #0f172a;">
-                                   <span>Total Tagihan:</span>
-                                   <span id="pdfGrandTotal">Rp 0</span>
-                               </div>
-                           </div>
-                       </div>
-
-                       <!-- Footer Faktur -->
-                       <div style="border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center; font-size: 10px; color: #94a3b8;">
-                           <p style="margin: 0; font-weight: 600; color: #1e293b;">Terima kasih telah berbelanja di Arenzhi Scent!</p>
-                           <p style="margin: 2px 0 0 0;">Faktur digital ini sah dan diterbitkan secara otomatis oleh Sistem Toko.</p>
-                       </div>
                    </div>
                </div>
            `;
@@ -915,6 +840,7 @@
            }
        }
 
+       // --- GENERATOR FAKTUR PDF PROFESIONAL (FIXED: RENDER DOM TEMPLATE TIDAK KOSONG) ---
        function downloadPdfInvoice(orderId) {
            const order = state.orders.find(o => o.order_id === orderId);
            if (!order) return;
@@ -925,24 +851,24 @@
            localStorage.setItem('arenzhi_orders', JSON.stringify(state.orders));
 
            const s = state.storeSettings;
-           const logoBox = document.getElementById('pdfLogoBox');
-           if (s.store_logo_url) {
-               logoBox.innerHTML = `<img src="${s.store_logo_url}" style="width:100%; height:100%; object-fit:cover;">`;
-           } else {
-               logoBox.innerHTML = `<span>${(s.store_name || 'A').charAt(0)}</span>`;
-           }
-           document.getElementById('pdfStoreName').innerText = s.store_name || 'Arenzhi Scent';
-           document.getElementById('pdfStoreAddress').innerText = s.store_address || '';
-           document.getElementById('pdfOrderId').innerText = `ID: ${order.order_id}`;
-           document.getElementById('pdfCustomerName').innerText = order.customer_name;
-           document.getElementById('pdfCustomerPhone').innerText = order.customer_phone;
-           document.getElementById('pdfCustomerAddress').innerText = order.shipping_address;
-           document.getElementById('pdfCourier').innerText = order.courier;
-           document.getElementById('pdfTracking').innerText = trackingNumber || '-';
-           document.getElementById('pdfDate').innerText = new Date(order.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' });
 
-           const tbody = document.getElementById('pdfTableBody');
-           tbody.innerHTML = order.items.map(i => `
+           // Buat elemen kontainer PDF secara dinamis agar ter-render sempurna tanpa kosong (blank)
+           const container = document.createElement('div');
+           container.style.position = 'absolute';
+           container.style.left = '-9999px';
+           container.style.top = '0';
+           container.style.width = '210mm';
+           container.style.backgroundColor = '#ffffff';
+           container.style.padding = '15mm';
+           container.style.fontFamily = "'Plus Jakarta Sans', sans-serif";
+           container.style.color = '#1e293b';
+
+           let logoHtml = `<div style="width: 50px; height: 50px; background: #0f172a; color: #ffffff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px;">${(s.store_name || 'A').charAt(0)}</div>`;
+           if (s.store_logo_url) {
+               logoHtml = `<div style="width: 50px; height: 50px; border-radius: 10px; overflow: hidden;"><img src="${s.store_logo_url}" style="width:100%; height:100%; object-fit:cover;"></div>`;
+           }
+
+           let itemsRows = order.items.map(i => `
                <tr style="border-bottom: 1px solid #f1f5f9;">
                    <td style="padding: 10px; color: #1e293b; font-weight: 500;">${i.title} (${i.size_ml || ''})</td>
                    <td style="padding: 10px; text-align: center; color: #475569;">${i.qty}</td>
@@ -951,24 +877,96 @@
                </tr>
            `).join('');
 
-           document.getElementById('pdfSubtotal').innerText = `Rp ${Number(order.subtotal).toLocaleString('id-ID')}`;
-           document.getElementById('pdfOngkir').innerText = `Rp ${Number(order.ongkir).toLocaleString('id-ID')}`;
-           document.getElementById('pdfGrandTotal').innerText = `Rp ${Number(order.gross_amount).toLocaleString('id-ID')}`;
+           container.innerHTML = `
+               <div style="max-width: 170mm; margin: 0 auto;">
+                   <!-- Header Faktur -->
+                   <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 20px;">
+                       <div style="display: flex; align-items: center; gap: 12px;">
+                           ${logoHtml}
+                           <div>
+                               <h2 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0; line-height: 1.2;">${s.store_name || 'Arenzhi Scent'}</h2>
+                               <p style="font-size: 10px; color: #64748b; margin: 2px 0 0 0; max-width: 250px;">${s.store_address || ''}</p>
+                           </div>
+                       </div>
+                       <div style="text-align: right;">
+                           <h1 style="font-size: 22px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.5px;">FAKTUR PENJUALAN</h1>
+                           <p style="font-size: 11px; color: #64748b; margin: 4px 0 0 0;">ID: ${order.order_id}</p>
+                       </div>
+                   </div>
 
-           const element = document.getElementById('pdfInvoiceTemplate');
-           element.style.display = 'block';
+                   <!-- Info Pelanggan & Pengiriman -->
+                   <div style="display: flex; justify-content: space-between; background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 20px; font-size: 11px;">
+                       <div>
+                           <p style="font-weight: bold; color: #0f172a; margin: 0 0 4px 0;">KEPADA YTH:</p>
+                           <p style="font-weight: 600; margin: 0; color: #1e293b;">${order.customer_name}</p>
+                           <p style="margin: 2px 0; color: #475569;">${order.customer_phone}</p>
+                           <p style="margin: 2px 0 0 0; color: #475569; max-width: 280px;">${order.shipping_address}</p>
+                       </div>
+                       <div style="text-align: right;">
+                           <p style="font-weight: bold; color: #0f172a; margin: 0 0 4px 0;">DETAIL PENGIRIMAN:</p>
+                           <p style="margin: 0; color: #475569;">Kurir: <strong>${order.courier}</strong></p>
+                           <p style="margin: 2px 0; color: #475569;">No. Resi: <strong style="color: #0f172a;">${trackingNumber || '-'}</strong></p>
+                           <p style="margin: 2px 0 0 0; color: #475569;">Tanggal: ${new Date(order.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}</p>
+                       </div>
+                   </div>
+
+                   <!-- Tabel Produk -->
+                   <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px;">
+                       <thead>
+                           <tr style="background: #0f172a; color: #ffffff;">
+                               <th style="padding: 10px; text-align: left;">Nama Produk Parfum</th>
+                               <th style="padding: 10px; text-align: center;">Qty</th>
+                               <th style="padding: 10px; text-align: right;">Harga Satuan</th>
+                               <th style="padding: 10px; text-align: right;">Subtotal</th>
+                           </tr>
+                       </thead>
+                       <tbody>
+                           ${itemsRows}
+                       </tbody>
+                   </table>
+
+                   <!-- Total Pembayaran -->
+                   <div style="display: flex; justify-content: flex-end; margin-bottom: 30px;">
+                       <div style="width: 220px; font-size: 11px;">
+                           <div style="display: flex; justify-content: space-between; padding: 4px 0; color: #475569;">
+                               <span>Subtotal Produk:</span>
+                               <strong>Rp ${Number(order.subtotal).toLocaleString('id-ID')}</strong>
+                           </div>
+                           <div style="display: flex; justify-content: space-between; padding: 4px 0; color: #475569;">
+                               <span>Biaya Ongkir:</span>
+                               <strong>Rp ${Number(order.ongkir).toLocaleString('id-ID')}</strong>
+                           </div>
+                           <div style="display: flex; justify-content: space-between; padding: 8px 0; border-top: 2px solid #0f172a; font-size: 13px; font-weight: bold; color: #0f172a;">
+                               <span>Total Tagihan:</span>
+                               <span>Rp ${Number(order.gross_amount).toLocaleString('id-ID')}</span>
+                           </div>
+                       </div>
+                   </div>
+
+                   <!-- Footer Faktur -->
+                   <div style="border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center; font-size: 10px; color: #94a3b8;">
+                       <p style="margin: 0; font-weight: 600; color: #1e293b;">Terima kasih telah berbelanja di ${s.store_name || 'Arenzhi Scent'}!</p>
+                       <p style="margin: 2px 0 0 0;">Faktur digital ini sah dan diterbitkan secara otomatis oleh Sistem Toko.</p>
+                   </div>
+               </div>
+           `;
+
+           document.body.appendChild(container);
 
            const opt = {
                margin:       10,
                filename:     `Faktur-${order.order_id}.pdf`,
                image:        { type: 'jpeg', quality: 0.98 },
-               html2canvas:  { scale: 2, useCORS: true },
+               html2canvas:  { scale: 2, useCORS: true, logging: false },
                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
            };
 
-           html2pdf().from(element).set(opt).save().then(() => {
-               element.style.display = 'none';
-               alert('Faktur PDF profesional berhasil diunduh!');
+           html2pdf().from(container).set(opt).save().then(() => {
+               document.body.removeChild(container);
+               alert('Faktur PDF profesional berhasil diunduh dengan rapi!');
+           }).catch(err => {
+               document.body.removeChild(container);
+               alert('Gagal mendownload PDF: ' + err.message);
            });
        }
 
@@ -984,7 +982,7 @@
 
            let itemsText = order.items.map(i => `• ${i.title} (${i.qty}x) - Rp ${Number(i.price_final * i.qty).toLocaleString('id-ID')}`).join('\n');
            
-           const message = `✨ *FAKTUR & RESI RESMI - ${state.storeSettings.store_name}* ✨\n\nHalo Kak *${order.customer_name}*,\nTerima kasih telah berbelanja di toko kami! 🛍️\n\n*ID Pesanan:* ${order.order_id}\n*Kurir:* ${order.courier}\n*No. Resi Pengiriman:* *${trackingNumber || 'Segera Diperbarui'}*\n*Alamat Tujuan:* ${order.shipping_address}\n\n*Rincian Pesanan:*\n${itemsText}\n• Ongkir (${order.courier}): Rp ${Number(order.ongkir).toLocaleString('id-ID')}\n\n*Total Tagihan: Rp ${Number(order.gross_amount).toLocaleString('id-ID')}*\nStatus Pembayaran: *LUNAS (Verified)*\n\nSilakan unduh faktur PDF resmi dari sistem kami. Terima kasih atas kepercayaan Anda kepada *${state.storeSettings.store_name}*! 🙏✨`;
+           const message = `✨ *FAKTUR & RESI RESMI - ${state.storeSettings.store_name}* ✨\n\nHalo Kak *${order.customer_name}*,\nTerima kasih telah berbelanja parfum eksklusif di toko kami! 🛍️\n\n*ID Pesanan:* ${order.order_id}\n*Kurir:* ${order.courier}\n*No. Resi Pengiriman:* *${trackingNumber || 'Segera Diperbarui'}*\n*Alamat Tujuan:* ${order.shipping_address}\n\n*Rincian Pesanan:*\n${itemsText}\n• Ongkir (${order.courier}): Rp ${Number(order.ongkir).toLocaleString('id-ID')}\n\n*Total Tagihan: Rp ${Number(order.gross_amount).toLocaleString('id-ID')}*\nStatus Pembayaran: *LUNAS (Verified)*\n\nFaktur PDF profesional telah diunduh di perangkat admin untuk dikirimkan kepada Anda. Terima kasih atas kepercayaan Anda kepada *${state.storeSettings.store_name}*! 🙏✨`;
 
            let phone = order.customer_phone.replace(/\D/g, '');
            if (phone.startsWith('0')) {
@@ -994,6 +992,7 @@
            const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
            window.open(waUrl, '_blank');
            
+           // Otomatis unduh PDF faktur ke perangkat
            downloadPdfInvoice(orderId);
        }
 
@@ -1070,7 +1069,7 @@
                    alert('Produk berhasil diperbarui!');
                } else {
                    state.products.unshift(productData);
-                   alert('Produk baru berhasil ditambahkan!');
+                   alert('Produk baru berhasil ditambah!');
                }
                resetProductForm();
                router.navigate('admin');
