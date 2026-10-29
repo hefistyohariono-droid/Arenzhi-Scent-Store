@@ -16,7 +16,6 @@
       @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
       body { font-family: 'Plus Jakarta Sans', sans-serif; }
       
-      /* CSS KHUSUS CETAK / PDF: Hanya elemen ber-ID printableInvoice yang akan tercetak sempurna */
       @media print {
          body * { visibility: hidden !important; }
          #printableInvoice, #printableInvoice * { visibility: visible !important; }
@@ -526,7 +525,7 @@
                            <div class="flex justify-between font-bold text-base text-slate-900 pt-2 border-t"><span>Total Tagihan:</span><span>Rp ${(subtotal + currentOngkir).toLocaleString('id-ID')}</span></div>
                        </div>
 
-                       <button type="submit" class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold shadow-md">Proses ke Pembayaran QRIS / Rekening</button>
+                       <button type="submit" class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold shadow-md">Proses ke Pembayaran</button>
                    </form>
                </div>
            `;
@@ -570,59 +569,20 @@
                created_at: new Date().toISOString()
            };
 
-           try {
-               const submitBtn = e.target.querySelector('button[type="submit"]');
-               if (submitBtn) { submitBtn.innerText = 'Membuat QRIS Dinamis...'; submitBtn.disabled = true; }
+           state.orders.push(orderData);
+           localStorage.setItem('arenzhi_orders', JSON.stringify(state.orders));
+           state.cart = [];
+           saveCart();
+           updateCartBadge();
 
-               let qrisUrl = null;
-               let qrString = null;
-
-               try {
-                   const response = await fetch('/api/generate-qris', {
-                       method: 'POST',
-                       headers: { 'Content-Type': 'application/json' },
-                       body: JSON.stringify({
-                           order_id: orderId,
-                           gross_amount: grossAmount,
-                           customer_details: { first_name: name, phone: phone, email: 'customer@arenzhi.com' },
-                           item_details: state.cart.map(i => ({ id: i.id, price: i.price_final, quantity: i.qty, name: i.title.substring(0, 50) }))
-                       })
-                   });
-                   const contentType = response.headers.get("content-type");
-                   if (contentType && contentType.includes("application/json") && response.ok) {
-                       const result = await response.json();
-                       qrisUrl = result.actions && result.actions[0] ? result.actions[0].url : null;
-                       qrString = result.qr_string || null;
-                   }
-               } catch (apiErr) {
-                   console.log("Backend serverless tidak aktif, menggunakan fallback QRIS lokal.");
-               }
-
-               if (!qrisUrl) {
-                   qrString = `00020101021226680016ID.CO.MIDTRANS.WWW0118936009140000000000303UAG0215${orderId}53033605802ID5910ArenzhiScent6006Malang6304`;
-                   qrisUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrString)}`;
-               }
-
-               orderData.qris_url = qrisUrl;
-               orderData.qr_string = qrString;
-
-               state.orders.push(orderData);
-               localStorage.setItem('arenzhi_orders', JSON.stringify(state.orders));
-               state.cart = [];
-               saveCart();
-               updateCartBadge();
-
-               router.navigate('payment', orderId);
-           } catch (err) {
-               alert('Terjadi kesalahan pembayaran: ' + err.message);
-               location.reload();
-           }
+           router.navigate('payment', orderId);
        }
 
        function renderPaymentView(orderId) {
            const order = state.orders.find(o => o.order_id === orderId);
            if (!order) return `<div class="text-center py-20">Data pesanan tidak ditemukan.</div>`;
            const paymentInfo = state.storeSettings.payment_info || "BRI: 786601020880538 a.n. Robiatul Adabiyah";
+           const qrisImage = state.storeSettings.qris_image_url || "";
 
            return `
                <div class="max-w-2xl mx-auto bg-white rounded-3xl border border-slate-200 p-8 shadow-sm space-y-6 text-center">
@@ -634,26 +594,31 @@
                        <p class="text-sm text-slate-500 mt-1">Order ID: <strong>${order.order_id}</strong> | Kurir: <strong>${order.courier}</strong></p>
                    </div>
                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-2">
-                       <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Tagihan Otomatis</span>
+                       <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Tagihan Pesanan</span>
                        <div class="text-3xl font-extrabold text-slate-900">Rp ${Number(order.gross_amount).toLocaleString('id-ID')}</div>
                    </div>
 
-                   <!-- OPSI A: QRIS -->
+                   <!-- OPSI A: QRIS TOKO ASLI -->
                    <div class="p-6 bg-white border border-slate-200 rounded-2xl space-y-3">
-                       <h3 class="font-bold text-sm text-slate-900">Opsi A: Scan QRIS</h3>
-                       ${order.qris_url ? `
+                       <h3 class="font-bold text-sm text-slate-900">Opsi A: Scan QRIS Resmi Toko</h3>
+                       ${qrisImage ? `
                            <div class="p-4 bg-slate-50 border rounded-2xl inline-block shadow-inner">
-                               <img src="${order.qris_url.startsWith('http') && !order.qris_url.includes('api.qrserver.com') ? 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(order.qr_string || order.qris_url) : order.qris_url}" alt="QRIS Code" class="mx-auto rounded-xl">
+                               <img src="${qrisImage}" alt="QRIS Resmi Toko" class="w-56 h-56 mx-auto object-cover rounded-xl">
                            </div>
-                       ` : `<p class="text-sm text-red-500">QRIS URL belum tersedia.</p>`}
-                       <p class="text-xs text-slate-500">Dapat diskan via GoPay, OVO, DANA, ShopeePay, atau m-Banking.</p>
+                       ` : `
+                           <div class="p-6 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs">
+                               <p class="font-bold">QRIS Toko Belum Diatur oleh Admin.</p>
+                               <p class="mt-1">Silakan masuk ke Panel Admin untuk mengunggah foto QRIS toko Anda agar bisa discan pelanggan.</p>
+                           </div>
+                       `}
+                       <p class="text-xs text-slate-500">Scan via m-Banking atau E-Wallet, lalu masukkan nominal secara manual sesuai total tagihan di atas.</p>
                    </div>
 
-                   <!-- OPSI B: TRANSFER REKENING ADMIN -->
+                   <!-- OPSI B: TRANSFER REKENING BANK -->
                    <div class="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-left space-y-2">
                        <h3 class="font-bold text-sm text-slate-900 border-b pb-2">Opsi B: Transfer Rekening Bank Toko</h3>
                        <p class="text-xs text-slate-700 whitespace-pre-line leading-relaxed font-medium">${paymentInfo}</p>
-                       <p class="text-[11px] text-slate-500 mt-1">Harap konfirmasi ke WhatsApp Admin setelah melakukan transfer.</p>
+                       <p class="text-[11px] text-slate-500 mt-1">Harap konfirmasi ke WhatsApp Admin setelah melakukan pembayaran.</p>
                    </div>
 
                    <button onclick="router.navigate('home')" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold shadow-md">Selesai / Kembali ke Beranda</button>
@@ -671,14 +636,14 @@
                    <div class="flex items-center justify-between">
                        <div>
                            <h2 class="text-2xl font-bold text-slate-900">Panel Admin & Pengaturan Toko</h2>
-                           <p class="text-sm text-slate-500">Kelola profil toko, produk, dan input resi pengiriman.</p>
+                           <p class="text-sm text-slate-500">Kelola profil toko, produk, upload QRIS, dan input resi pengiriman.</p>
                        </div>
                        <button onclick="router.navigate('home')" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold">Kembali ke Beranda</button>
                    </div>
 
-                   <!-- Form Pengaturan Profil Toko -->
+                   <!-- Form Pengaturan Profil Toko & QRIS -->
                    <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-                       <h3 class="font-bold text-lg text-slate-900 border-b pb-2">Informasi Profil Toko & Rekening</h3>
+                       <h3 class="font-bold text-lg text-slate-900 border-b pb-2">Informasi Profil Toko & Upload QRIS Resmi</h3>
                        <form onsubmit="saveStoreSettings(event)" class="space-y-4">
                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                <div>
@@ -698,6 +663,16 @@
                                <div>
                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Atau URL Logo Toko</label>
                                    <input type="url" id="adminLogoUrl" value="${s.store_logo_url || ''}" placeholder="https://..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                               </div>
+                           </div>
+                           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                               <div>
+                                   <label class="block text-xs font-semibold text-slate-700 mb-1">Upload Foto QRIS Resmi Toko (Penting Agar Bisa Discan)</label>
+                                   <input type="file" id="adminQrisFile" accept="image/*" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white">
+                               </div>
+                               <div>
+                                   <label class="block text-xs font-semibold text-slate-700 mb-1">Atau URL Gambar QRIS</label>
+                                   <input type="url" id="adminQrisUrl" value="${s.qris_image_url || ''}" placeholder="https://..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
                                </div>
                            </div>
                            <div>
@@ -782,7 +757,7 @@
                        </div>
                    </div>
 
-                   <!-- DAFTAR PESANAN MASUK DENGAN TOMBOL SIMPAN RESI, UNDUH PDF/CETAK, & HAPUS -->
+                   <!-- DAFTAR PESANAN MASUK -->
                    <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
                        <h3 class="font-bold text-lg text-slate-900 border-b pb-2">Daftar Pesanan Masuk (${state.orders.length})</h3>
                        ${state.orders.length === 0 ? '<p class="text-sm text-slate-500">Belum ada pesanan masuk.</p>' : 
@@ -800,14 +775,14 @@
                                        </div>
                                    </div>
 
-                                   <!-- Detail Produk yang Dibeli -->
+                                   <!-- Detail Produk -->
                                    <div class="text-xs text-slate-600 space-y-1 bg-white p-3 rounded-xl border">
                                        <span class="font-semibold text-slate-900">Item Pesanan:</span>
                                        ${o.items.map(i => `<div>• ${i.title} (${i.qty}x) @Rp ${Number(i.price_final).toLocaleString('id-ID')}</div>`).join('')}
                                        <div><strong>Ongkir (${o.courier}):</strong> Rp ${Number(o.ongkir).toLocaleString('id-ID')}</div>
                                    </div>
 
-                                   <!-- INPUT RESI, TOMBOL SIMPAN RESI, PDF, KIRIM WA, DAN HAPUS -->
+                                   <!-- INPUT RESI, TOMBOL SIMPAN, CETAK PDF, KIRIM WA, HAPUS -->
                                    <div class="flex flex-col sm:flex-row items-center gap-3 pt-2">
                                        <div class="flex-1 w-full">
                                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Nomor Resi Pengiriman</label>
@@ -848,7 +823,6 @@
            }
        }
 
-       // --- FUNGSI HAPUS PESANAN MASUK ---
        function deleteOrder(orderId) {
            if (!confirm(`Apakah Anda yakin ingin menghapus pesanan ${orderId} dari daftar?`)) return;
            state.orders = state.orders.filter(o => o.order_id !== orderId);
@@ -857,7 +831,6 @@
            router.navigate('admin');
        }
 
-       // --- FUNGSI UTAMA CETAK / SIMPAN FAKTUR PDF DENGAN ID "printableInvoice" (DIJAMIN TIDAK KOSONG) ---
        function downloadPdfInvoice(orderId) {
            const order = state.orders.find(o => o.order_id === orderId);
            if (!order) return;
@@ -868,8 +841,6 @@
            localStorage.setItem('arenzhi_orders', JSON.stringify(state.orders));
 
            const s = state.storeSettings;
-
-           // Hapus elemen kontainer cetak lama jika masih ada di DOM
            const oldContainer = document.getElementById('printableInvoice');
            if (oldContainer) oldContainer.remove();
 
@@ -898,7 +869,6 @@
 
            container.innerHTML = `
                <div style="max-width: 170mm; margin: 0 auto;">
-                   <!-- Header Identitas Toko -->
                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 20px;">
                        <div style="display: flex; align-items: center; gap: 12px;">
                            ${logoHtml}
@@ -912,8 +882,6 @@
                            <p style="font-size: 11px; color: #64748b; margin: 4px 0 0 0;">ID Pesanan: ${order.order_id}</p>
                        </div>
                    </div>
-
-                   <!-- Tabel Informasi Pelanggan & Kurir Pengiriman -->
                    <div style="display: flex; justify-content: space-between; background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 20px; font-size: 11px;">
                        <div>
                            <p style="font-weight: bold; color: #0f172a; margin: 0 0 4px 0;">INFORMASI PELANGGAN:</p>
@@ -928,8 +896,6 @@
                            <p style="margin: 2px 0 0 0; color: #475569;">Tanggal: ${new Date(order.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}</p>
                        </div>
                    </div>
-
-                   <!-- Rincian Tabel Produk yang Dibeli -->
                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px;">
                        <thead>
                            <tr style="background: #0f172a; color: #ffffff;">
@@ -943,8 +909,6 @@
                            ${itemsRows}
                        </tbody>
                    </table>
-
-                   <!-- Rincian Total Pembayaran Akhir -->
                    <div style="display: flex; justify-content: flex-end; margin-bottom: 30px;">
                        <div style="width: 220px; font-size: 11px;">
                            <div style="display: flex; justify-content: space-between; padding: 4px 0; color: #475569;">
@@ -961,8 +925,6 @@
                            </div>
                        </div>
                    </div>
-
-                   <!-- Footer Faktur -->
                    <div style="border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center; font-size: 10px; color: #94a3b8;">
                        <p style="margin: 0; font-weight: 600; color: #1e293b;">Terima kasih telah berbelanja di ${s.store_name || 'Arenzhi Scent'}!</p>
                        <p style="margin: 2px 0 0 0;">Faktur digital profesional ini diterbitkan secara resmi oleh sistem toko.</p>
@@ -971,13 +933,9 @@
            `;
 
            document.body.appendChild(container);
-
-           // Memunculkan jendela dialog cetak browser (Pilih "Save as PDF" pada tujuan printer)
            setTimeout(() => {
                window.print();
-               setTimeout(() => {
-                   container.remove();
-               }, 500);
+               setTimeout(() => { container.remove(); }, 500);
            }, 200);
        }
 
@@ -996,13 +954,10 @@
            const message = `✨ *FAKTUR & RESI RESMI - ${state.storeSettings.store_name}* ✨\n\nHalo Kak *${order.customer_name}*,\nTerima kasih telah berbelanja parfum eksklusif di toko kami! 🛍️\n\n*ID Pesanan:* ${order.order_id}\n*Kurir:* ${order.courier}\n*No. Resi Pengiriman:* *${trackingNumber || 'Segera Diperbarui'}*\n*Alamat Tujuan:* ${order.shipping_address}\n\n*Rincian Pesanan:*\n${itemsText}\n• Ongkir (${order.courier}): Rp ${Number(order.ongkir).toLocaleString('id-ID')}\n\n*Total Tagihan: Rp ${Number(order.gross_amount).toLocaleString('id-ID')}*\nStatus Pembayaran: *LUNAS (Verified)*\n\nTerima kasih atas kepercayaan Anda kepada *${state.storeSettings.store_name}*! 🙏✨`;
 
            let phone = order.customer_phone.replace(/\D/g, '');
-           if (phone.startsWith('0')) {
-               phone = '62' + phone.substring(1);
-           }
+           if (phone.startsWith('0')) { phone = '62' + phone.substring(1); }
 
            const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
            window.open(waUrl, '_blank');
-           
            downloadPdfInvoice(orderId);
        }
 
@@ -1024,6 +979,8 @@
            
            const logoFileInput = document.getElementById('adminLogoFile');
            const logoUrlInput = document.getElementById('adminLogoUrl').value;
+           const qrisFileInput = document.getElementById('adminQrisFile');
+           const qrisUrlInput = document.getElementById('adminQrisUrl').value;
 
            if (logoFileInput.files && logoFileInput.files[0]) {
                state.storeSettings.store_logo_url = await convertFileToBase64(logoFileInput.files[0]);
@@ -1031,10 +988,16 @@
                state.storeSettings.store_logo_url = logoUrlInput;
            }
 
+           if (qrisFileInput.files && qrisFileInput.files[0]) {
+               state.storeSettings.qris_image_url = await convertFileToBase64(qrisFileInput.files[0]);
+           } else if (qrisUrlInput) {
+               state.storeSettings.qris_image_url = qrisUrlInput;
+           }
+
            localStorage.setItem('arenzhi_settings', JSON.stringify(state.storeSettings));
            renderAppHeader();
            updateFloatingWaLink();
-           alert('Pengaturan toko berhasil disimpan!');
+           alert('Pengaturan toko & QRIS berhasil disimpan!');
            router.navigate('admin');
        }
 
@@ -1107,7 +1070,7 @@
        }
 
        function resetProductForm() {
-           document.getElementById('editProductId').value = ``;
+           document.getElementById('editProductId').value = '';
            document.getElementById('productFormTitle').innerText = 'Tambah Produk Parfum Baru';
            document.getElementById('productSubmitBtn').innerText = 'Simpan & Tambah Produk';
            document.getElementById('cancelEditBtn').classList.add('hidden');
